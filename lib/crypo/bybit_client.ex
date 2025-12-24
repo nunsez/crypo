@@ -1,12 +1,12 @@
-defmodule BybitClient do
+defmodule Crypo.BybitClient do
   @moduledoc """
   start_time =
     DateTime.utc_now(:millisecond)
     |> DateTime.add(-720, :day)
     |> DateTime.to_unix(:millisecond)
 
-  # start_time = System.system_time(:millisecond) - :timer.minutes(1000)
-  BybitClient.get_all_transactions(start_time, nil) |> dbg()
+  # start_time = System.system_time(:millisecond) - :timer.hours(24 * 14)
+  Crypo.BybitClient.get_all_transactions(start_time, nil)
   """
 
   require Logger

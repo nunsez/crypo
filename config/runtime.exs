@@ -7,6 +7,14 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+load_env = fn path ->
+  path = Path.expand(path, __DIR__)
+  if File.exists?(path), do: Code.eval_file(path)
+end
+
+load_env.("../.env.exs")
+load_env.("../.env.#{config_env()}.exs")
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server

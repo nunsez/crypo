@@ -111,3 +111,8 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+config :crypo, :bybit,
+  api_rest: System.get_env("BYBIT_API_REST", "https://api.bybit.com"),
+  api_key: System.get_env("BYBIT_API_KEY", "BYBIT_API_KEY"),
+  api_secret: System.get_env("BYBIT_API_SECRET", "BYBIT_API_SECRET")

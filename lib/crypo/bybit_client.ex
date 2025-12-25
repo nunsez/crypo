@@ -1,72 +1,18 @@
 defmodule Crypo.BybitClient do
-  @moduledoc """
-  start_time =
-    DateTime.utc_now(:millisecond)
-    |> DateTime.add(-720, :day)
-    |> DateTime.to_unix(:millisecond)
-
-  # start_time = System.system_time(:millisecond) - :timer.hours(24 * 14)
-  Crypo.BybitClient.get_all_transactions(start_time, nil)
-  """
-
-  require Logger
-
   # 7 days
-  @period_ms 604_800_000
-  @transaction_log_limit 50
+  @spec period_ms() :: pos_integer()
+  def period_ms, do: 604_800_000
 
-  def get_all_transactions(start_time, cursor) do
-    Logger.info("start_time: #{start_time}, current cursor: #{cursor}")
-
-    response = get_transaction_log(start_time, cursor)
-
-    case response.body do
-      %{"retCode" => 10001} ->
-        {:error, :too_early}
-
-      %{"result" => %{"list" => list, "nextPageCursor" => next_cursor}} ->
-        Logger.info("list len: #{length(list)}, next cursor: #{next_cursor}")
-        Process.sleep(:timer.seconds(1))
-
-        case make_decision(start_time, next_cursor, list) do
-          :done -> {:ok, :done}
-          :continue_pagination -> get_all_transactions(start_time, next_cursor)
-          {:advance_time_window, next_start_time} -> get_all_transactions(next_start_time, nil)
-        end
-
-      body ->
-        Logger.error("""
-        get_all_transactions error. status: #{response.status}.
-        start_time: #{start_time}, cursor: #{cursor}
-        body: #{inspect(body)}
-        """)
-
-        {:error, {start_time, cursor}}
-    end
-  end
-
-  def make_decision(start_time, next_cursor, list) do
-    if not is_nil(next_cursor) and length(list) >= @transaction_log_limit do
-      :continue_pagination
-    else
-      next_start_time = start_time + @period_ms
-      current_time = System.system_time(:millisecond)
-
-      if next_start_time >= current_time do
-        :done
-      else
-        {:advance_time_window, next_start_time}
-      end
-    end
-  end
+  @spec transaction_log_limit() :: pos_integer()
+  def transaction_log_limit, do: 50
 
   def get_transaction_log(start_time, cursor) do
     params = %{
       "accountType" => "UNIFIED",
       "category" => "spot",
       "startTime" => start_time,
-      "endTime" => start_time + @period_ms,
-      "limit" => @transaction_log_limit
+      "endTime" => start_time + period_ms(),
+      "limit" => transaction_log_limit()
     }
 
     params = maybe_put_cursor(params, cursor)

@@ -1,0 +1,41 @@
+defmodule Crypo.Trades.Trade do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "trades" do
+    field :exchange_id, :string
+    field :order_id, :string
+    field :trade_id, :string
+    field :symbol, :string
+    field :side, :string
+    field :cash_flow, :float
+    field :change, :float
+    field :price, :float
+    field :fee, :float
+    field :fee_rate, :float
+    field :transaction_time, :utc_datetime_usec
+
+    timestamps(type: :utc_datetime_usec)
+  end
+
+  @required [
+    :exchange_id,
+    :order_id,
+    :trade_id,
+    :symbol,
+    :side,
+    :cash_flow,
+    :change,
+    :price,
+    :fee,
+    :fee_rate,
+    :transaction_time
+  ]
+
+  @doc false
+  def changeset(trade, attrs) do
+    trade
+    |> cast(attrs, @required)
+    |> validate_required(@required)
+  end
+end

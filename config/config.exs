@@ -9,7 +9,7 @@ import Config
 
 config :crypo,
   ecto_repos: [Crypo.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime_usec]
 
 # Configure the endpoint
 config :crypo, CrypoWeb.Endpoint,

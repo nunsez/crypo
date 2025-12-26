@@ -103,7 +103,7 @@ defmodule Crypo.Trades do
   end
 
   @spec last_trade_time() :: DateTime.t() | nil
-  def last_trade_time() do
+  def last_trade_time do
     query =
       from Trade,
         select: [:transaction_time],
@@ -114,5 +114,15 @@ defmodule Crypo.Trades do
       %Trade{transaction_time: transaction_time} -> transaction_time
       _other -> nil
     end
+  end
+
+  @spec symbols() :: [String.t()]
+  def symbols do
+    qeury =
+      from t in Trade,
+        select: t.symbol,
+        distinct: true
+
+    Repo.all(qeury)
   end
 end

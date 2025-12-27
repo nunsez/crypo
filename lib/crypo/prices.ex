@@ -4,9 +4,11 @@ defmodule Crypo.Prices do
   """
 
   import Ecto.Query, warn: false
-  alias Crypo.Repo
 
+  alias Crypo.Repo
   alias Crypo.Prices.Price
+
+  require Logger
 
   @doc """
   Returns the list of prices.
@@ -100,5 +102,16 @@ defmodule Crypo.Prices do
   """
   def change_price(%Price{} = price, attrs \\ %{}) do
     Price.changeset(price, attrs)
+  end
+
+  @spec sync_symbols(actual_symbols :: [String.t()]) :: :ok
+  def sync_symbols(actual_symbols) do
+    from(p in Price, where: p.symbol not in ^actual_symbols) |> Repo.delete_all()
+
+    existing_symbols = from(p in Price, select: p.symbol) |> Repo.all()
+    new_symbols = MapSet.difference(MapSet.new(actual_symbols), MapSet.new(existing_symbols))
+    Logger.info("New symbols: #{new_symbols |> MapSet.to_list() |> inspect()}")
+
+    Enum.each(new_symbols, fn symbol -> create_price(%{symbol: symbol, price: 0}) end)
   end
 end

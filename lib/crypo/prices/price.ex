@@ -9,10 +9,12 @@ defmodule Crypo.Prices.Price do
     timestamps(type: :utc_datetime_usec)
   end
 
+  @required [:symbol, :price]
+
   @doc false
   def changeset(price, attrs) do
     price
-    |> cast(attrs, [:symbol, :price])
-    |> validate_required([:symbol, :price])
+    |> cast(attrs, @required)
+    |> validate_required(@required)
   end
 end

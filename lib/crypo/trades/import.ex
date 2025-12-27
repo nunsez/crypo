@@ -1,5 +1,6 @@
 defmodule Crypo.Trades.Import do
   alias Crypo.BybitClient
+  alias Crypo.Prices
   alias Crypo.Trades
   alias Crypo.Trades.Trade
   alias Crypo.Repo
@@ -10,6 +11,7 @@ defmodule Crypo.Trades.Import do
     datetime = Trades.last_trade_time() || two_years_ago()
     timestamp = DateTime.to_unix(datetime, :millisecond)
     get_all_transactions(timestamp + 1, nil)
+    sync_prices()
   end
 
   @spec two_years_ago() :: pos_integer()
@@ -127,5 +129,10 @@ defmodule Crypo.Trades.Import do
         {:advance_time_window, next_start_time}
       end
     end
+  end
+
+  def sync_prices do
+    symbols = Trades.symbols()
+    Prices.sync_symbols(symbols)
   end
 end

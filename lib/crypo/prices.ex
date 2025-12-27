@@ -114,4 +114,9 @@ defmodule Crypo.Prices do
 
     Enum.each(new_symbols, fn symbol -> create_price(%{symbol: symbol, price: 0}) end)
   end
+
+  def update_prices(price_changesets_by_symbol) do
+    changesets = Map.values(price_changesets_by_symbol)
+    Enum.each(changesets, fn changeset -> Repo.update(changeset) end)
+  end
 end

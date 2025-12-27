@@ -16,5 +16,6 @@ defmodule Crypo.Prices.Price do
     price
     |> cast(attrs, @required)
     |> validate_required(@required)
+    |> unique_constraint(:symbol)
   end
 end

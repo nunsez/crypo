@@ -6,6 +6,10 @@ defmodule Crypo.BybitClient do
   @spec transaction_log_limit() :: pos_integer()
   def transaction_log_limit, do: 50
 
+  def get_tickers do
+    get_public("/v5/market/tickers", %{"category" => "spot"})
+  end
+
   def get_transaction_log(start_time, cursor) do
     params = %{
       "accountType" => "UNIFIED",

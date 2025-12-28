@@ -1,14 +1,14 @@
 defmodule CrypoWeb.PortfolioLive.Index do
-  alias Crypo.Prices
   use CrypoWeb, :live_view
 
+  alias Crypo.Prices
   alias Crypo.Trades
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>Listing Trades</.header>
+      <.header>Portfolio</.header>
 
       <.table
         id="portfolio"

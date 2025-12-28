@@ -56,7 +56,7 @@ defmodule Crypo.BybitClient do
 
   def auth_headers(query) do
     timestamp = timestamp()
-    recv_window = "5000"
+    recv_window = "10000"
     signature = generate_signature(timestamp, recv_window, query)
 
     [

@@ -17,7 +17,9 @@ defmodule CrypoWeb.Router do
   scope "/", CrypoWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    # get "/portfolio", PageController, :home
+
+    live "/", PortfolioLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

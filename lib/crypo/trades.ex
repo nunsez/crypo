@@ -125,4 +125,9 @@ defmodule Crypo.Trades do
 
     Repo.all(qeury)
   end
+
+  def find_by_symbol(symbol) do
+    query = from(Trade, where: [symbol: ^symbol], order_by: [desc: :transaction_time])
+    Repo.all(query)
+  end
 end

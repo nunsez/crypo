@@ -1,3 +1,5 @@
+IEx.configure(inspect: [limit: :infinity])
+
 import_if_available(Ecto.Query)
 
 alias Crypo.Repo

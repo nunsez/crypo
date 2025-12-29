@@ -118,12 +118,12 @@ defmodule Crypo.Trades do
 
   @spec symbols() :: [String.t()]
   def symbols do
-    qeury =
+    query =
       from t in Trade,
         select: t.symbol,
         distinct: true
 
-    Repo.all(qeury)
+    Repo.all(query)
   end
 
   def find_by_symbol(symbol) do

@@ -76,4 +76,66 @@ defmodule Crypo.TradesTest do
       assert %Ecto.Changeset{} = Trades.change_trade(trade)
     end
   end
+
+  describe "trades" do
+    alias Crypo.Trades.Trade
+
+    import Crypo.TradesFixtures
+
+    @invalid_attrs %{symbol: nil, side: nil, change: nil, price: nil, transaction_time: nil}
+
+    test "list_trades/0 returns all trades" do
+      trade = trade_fixture()
+      assert Trades.list_trades() == [trade]
+    end
+
+    test "get_trade!/1 returns the trade with given id" do
+      trade = trade_fixture()
+      assert Trades.get_trade!(trade.id) == trade
+    end
+
+    test "create_trade/1 with valid data creates a trade" do
+      valid_attrs = %{symbol: "some symbol", side: "some side", change: "some change", price: "some price", transaction_time: "some transaction_time"}
+
+      assert {:ok, %Trade{} = trade} = Trades.create_trade(valid_attrs)
+      assert trade.symbol == "some symbol"
+      assert trade.side == "some side"
+      assert trade.change == "some change"
+      assert trade.price == "some price"
+      assert trade.transaction_time == "some transaction_time"
+    end
+
+    test "create_trade/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Trades.create_trade(@invalid_attrs)
+    end
+
+    test "update_trade/2 with valid data updates the trade" do
+      trade = trade_fixture()
+      update_attrs = %{symbol: "some updated symbol", side: "some updated side", change: "some updated change", price: "some updated price", transaction_time: "some updated transaction_time"}
+
+      assert {:ok, %Trade{} = trade} = Trades.update_trade(trade, update_attrs)
+      assert trade.symbol == "some updated symbol"
+      assert trade.side == "some updated side"
+      assert trade.change == "some updated change"
+      assert trade.price == "some updated price"
+      assert trade.transaction_time == "some updated transaction_time"
+    end
+
+    test "update_trade/2 with invalid data returns error changeset" do
+      trade = trade_fixture()
+      assert {:error, %Ecto.Changeset{}} = Trades.update_trade(trade, @invalid_attrs)
+      assert trade == Trades.get_trade!(trade.id)
+    end
+
+    test "delete_trade/1 deletes the trade" do
+      trade = trade_fixture()
+      assert {:ok, %Trade{}} = Trades.delete_trade(trade)
+      assert_raise Ecto.NoResultsError, fn -> Trades.get_trade!(trade.id) end
+    end
+
+    test "change_trade/1 returns a trade changeset" do
+      trade = trade_fixture()
+      assert %Ecto.Changeset{} = Trades.change_trade(trade)
+    end
+  end
 end

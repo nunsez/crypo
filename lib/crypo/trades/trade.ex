@@ -14,6 +14,7 @@ defmodule Crypo.Trades.Trade do
     field :fee, :float
     field :fee_rate, :float
     field :transaction_time, :utc_datetime_usec
+    field :disabled_at, :integer
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -32,10 +33,17 @@ defmodule Crypo.Trades.Trade do
     :transaction_time
   ]
 
+  @optional [:disabled_at]
+
+  def disabled?(%__MODULE__{disabled_at: nil}), do: false
+  def disabled?(%__MODULE__{}), do: true
+
+  def enabled?(%__MODULE__{} = trade), do: not disabled?(trade)
+
   @doc false
   def changeset(trade, attrs) do
     trade
-    |> cast(attrs, @required)
+    |> cast(attrs, @required ++ @optional)
     |> validate_required(@required)
   end
 end

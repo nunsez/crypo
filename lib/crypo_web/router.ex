@@ -19,6 +19,7 @@ defmodule CrypoWeb.Router do
 
     # get "/portfolio", PageController, :home
 
+    live "/trades", TradeLive.Index, :index
     live "/", PortfolioLive.Index, :index
   end
 

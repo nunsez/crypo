@@ -30,22 +30,13 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, "Portfolio")
-     |> stream(:portfolio, build_portfolio())}
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    portfolio = Trades.get_portfolio!(id)
-    {:ok, _} = Trades.delete_portfolio(portfolio)
-
-    {:noreply, stream_delete(socket, :trades, portfolio)}
+    socket = assign(socket, :page_title, "Portfolio")
+    socket = stream(socket, :portfolio, build_portfolio())
+    {:ok, socket}
   end
 
   defp build_portfolio() do
-    trades = Trades.list_trades()
+    trades = Trades.list_enabled_trades()
     prices = Prices.list_prices() |> Map.new(fn price -> {price.symbol, price} end)
 
     by_symbol = Enum.group_by(trades, fn trade -> trade.symbol end)
@@ -103,14 +94,16 @@ defmodule CrypoWeb.PortfolioLive.Index do
   end
 
   defp format_number(number) when is_number(number) do
+    absolute = abs(number)
+
     cond do
       number == 0 -> "0"
-      abs(number) < 0.001 -> :erlang.float_to_binary(number, decimals: 8)
-      abs(number) < 1 -> :erlang.float_to_binary(number, decimals: 6)
-      abs(number) < 1000 -> :erlang.float_to_binary(number, decimals: 2)
+      absolute < 0.001 -> :erlang.float_to_binary(number, decimals: 8)
+      absolute < 1 -> :erlang.float_to_binary(number, decimals: 6)
+      absolute < 1000 -> :erlang.float_to_binary(number, decimals: 2)
       true -> :erlang.float_to_binary(number, decimals: 2)
     end
   end
 
-  defp format_number(_), do: "-"
+  defp format_number(_), do: "N/A"
 end

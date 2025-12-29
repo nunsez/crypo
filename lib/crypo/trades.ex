@@ -18,7 +18,14 @@ defmodule Crypo.Trades do
 
   """
   def list_trades do
-    Repo.all(Trade)
+    query = default_order(Trade)
+    Repo.all(query)
+  end
+
+  def list_enabled_trades do
+    query = from(t in Trade, where: is_nil(t.disabled_at))
+    query = default_order(query)
+    Repo.all(query)
   end
 
   @doc """
@@ -102,18 +109,15 @@ defmodule Crypo.Trades do
     Trade.changeset(trade, attrs)
   end
 
+  def default_order(query) do
+    order_by(query, desc: :transaction_time)
+  end
+
   @spec last_trade_time() :: DateTime.t() | nil
   def last_trade_time do
-    query =
-      from Trade,
-        select: [:transaction_time],
-        order_by: [desc: :transaction_time],
-        limit: 1
-
-    case Repo.one(query) do
-      %Trade{transaction_time: transaction_time} -> transaction_time
-      _other -> nil
-    end
+    query = from(t in Trade, select: t.transaction_time, limit: 1)
+    query = default_order(query)
+    Repo.one(query)
   end
 
   @spec symbols() :: [String.t()]
@@ -127,7 +131,17 @@ defmodule Crypo.Trades do
   end
 
   def find_by_symbol(symbol) do
-    query = from(Trade, where: [symbol: ^symbol], order_by: [desc: :transaction_time])
+    query = from(Trade, where: [symbol: ^symbol])
+    query = default_order(query)
     Repo.all(query)
+  end
+
+  def disable(%Trade{} = trade) do
+    now = System.system_time(:second)
+    update_trade(trade, %{disabled_at: now})
+  end
+
+  def enable(%Trade{} = trade) do
+    update_trade(trade, %{disabled_at: nil})
   end
 end

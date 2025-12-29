@@ -60,10 +60,11 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
         sell_trades = Enum.filter(trades, fn trade -> trade.side == "Sell" end)
         sell_cost = -Enum.sum_by(sell_trades, fn trade -> trade.cash_flow * trade.price end)
-        sell_count = -Enum.sum_by(sell_trades, fn trade -> trade.change end)
+        # sell_count = -Enum.sum_by(sell_trades, fn trade -> trade.change end)
 
         balance = Enum.sum_by(trades, fn trade -> trade.change end)
-        current_price = prices[symbol].price || 0
+
+        current_price = if prices[symbol], do: prices[symbol].price, else: 0
         my_cost = buy_cost - sell_cost
         current_cost = balance * current_price
         pl_dollars = current_cost - my_cost
@@ -88,7 +89,13 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
     result =
       Enum.map(result, fn item ->
-        share = Float.round(item.current_cost * 100 / portfolio_cost, 1)
+        share =
+          if portfolio_cost > 0 do
+            Float.round(item.current_cost * 100 / portfolio_cost, 1)
+          else
+            0.0
+          end
+
         %{item | share: share}
       end)
 

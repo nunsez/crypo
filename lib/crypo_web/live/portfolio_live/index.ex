@@ -14,7 +14,12 @@ defmodule CrypoWeb.PortfolioLive.Index do
         id="portfolio"
         rows={@streams.portfolio}
       >
-        <:col :let={{_id, item}} label="Currency">{item.currency}</:col>
+        <:col :let={{_id, item}} label="Currency">
+          <.link class="link link-primary" patch={~p"/trades/#{item.symbol}"}>
+            {item.currency}
+          </.link>
+        </:col>
+
         <:col :let={{_id, item}} label="Balance">{format_number(item.balance)}</:col>
         <:col :let={{_id, item}} label="Buy Average">{format_number(item.buy_average)}</:col>
         <:col :let={{_id, item}} label="My Cost">{format_number(item.my_cost)}</:col>
@@ -64,6 +69,7 @@ defmodule CrypoWeb.PortfolioLive.Index do
         %{
           id: currency,
           currency: currency,
+          symbol: symbol,
           balance: balance,
           buy_average: buy_average,
           my_cost: my_cost,

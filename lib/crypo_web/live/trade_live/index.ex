@@ -8,13 +8,20 @@ defmodule CrypoWeb.TradeLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>Listing Trades</.header>
+      <.header>{@header}</.header>
 
       <.table
         id="trades"
         rows={@streams.trades}
       >
-        <:col :let={{_id, trade}} label="Symbol">{trade.symbol}</:col>
+        <:col :let={{_id, trade}} label="Symbol">
+          <span :if={@symbol}>{trade.symbol}</span>
+
+          <.link :if={!@symbol} class="link link-primary" patch={~p"/trades/#{trade.symbol}"}>
+            {trade.symbol}
+          </.link>
+        </:col>
+
         <:col :let={{_id, trade}} label="Side">{trade.side}</:col>
         <:col :let={{_id, trade}} label="Change">{trade.change}</:col>
         <:col :let={{_id, trade}} label="Price">{trade.price}</:col>
@@ -37,11 +44,33 @@ defmodule CrypoWeb.TradeLive.Index do
   end
 
   @impl true
+  def mount(%{"symbol" => symbol}, _session, socket) do
+    upcased = String.upcase(symbol)
+
+    if symbol == upcased do
+      trades = Trades.find_by_symbol(symbol)
+
+      socket = assign(socket, :page_title, "Listing #{symbol} Trades")
+      socket = assign(socket, :header, "Listing #{symbol} Trades")
+      socket = assign(socket, :symbol, true)
+      socket = stream(socket, :trades, trades)
+
+      {:ok, socket}
+    else
+      socket = redirect(socket, to: ~p"/trades/#{upcased}")
+      {:ok, socket}
+    end
+  end
+
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, "Listing Trades")
-     |> stream(:trades, list_trades())}
+    trades = Trades.list_trades()
+
+    socket = assign(socket, :page_title, "Listing Trades")
+    socket = assign(socket, :header, "Listing Trades")
+    socket = assign(socket, :symbol, false)
+    socket = stream(socket, :trades, trades)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -73,9 +102,5 @@ defmodule CrypoWeb.TradeLive.Index do
         socket = put_flash(socket, :error, "Enable error")
         {:noreply, socket}
     end
-  end
-
-  defp list_trades() do
-    Trades.list_trades()
   end
 end

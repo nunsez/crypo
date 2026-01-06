@@ -1,6 +1,7 @@
 defmodule Crypo.Trades.Import do
   alias Crypo.BybitClient
   alias Crypo.Prices
+  alias Crypo.Settings
   alias Crypo.Trades
   alias Crypo.Trades.Trade
   alias Crypo.Repo
@@ -8,7 +9,7 @@ defmodule Crypo.Trades.Import do
   require Logger
 
   def call do
-    datetime = Trades.last_trade_time() || two_years_ago()
+    datetime = Settings.trades_imported_at() || Trades.last_trade_time() || two_years_ago()
     timestamp = DateTime.to_unix(datetime, :millisecond)
     get_all_transactions(timestamp + 1, nil)
     sync_prices()
@@ -98,9 +99,15 @@ defmodule Crypo.Trades.Import do
         Process.sleep(:timer.seconds(1))
 
         case make_decision(start_time, next_cursor, list) do
-          :done -> {:ok, :done}
-          :continue_pagination -> get_all_transactions(start_time, next_cursor)
-          {:advance_time_window, next_start_time} -> get_all_transactions(next_start_time, nil)
+          :done ->
+            {:ok, _schema} = Settings.set_trades_imported_at(start_time)
+            {:ok, :done}
+
+          :continue_pagination ->
+            get_all_transactions(start_time, next_cursor)
+
+          {:advance_time_window, next_start_time} ->
+            get_all_transactions(next_start_time, nil)
         end
 
       body ->

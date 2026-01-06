@@ -48,7 +48,7 @@ defmodule CrypoWeb.TradeLive.Index do
     upcased = String.upcase(symbol)
 
     if symbol == upcased do
-      trades = Trades.find_by_symbol(symbol)
+      trades = if connected?(socket), do: Trades.find_by_symbol(symbol), else: []
 
       socket =
         socket
@@ -68,7 +68,7 @@ defmodule CrypoWeb.TradeLive.Index do
   end
 
   def mount(_params, _session, socket) do
-    trades = Trades.list_trades()
+    trades = if connected?(socket), do: Trades.list_trades(), else: []
 
     socket =
       socket
@@ -124,7 +124,10 @@ defmodule CrypoWeb.TradeLive.Index do
   end
 
   def handle_event("update-prices", _unsigned_params, socket) do
-    # ignore
+    socket =
+      socket
+      |> put_flash(:info, "Please visit the portfolio to update prices")
+
     {:noreply, socket}
   end
 
@@ -137,6 +140,7 @@ defmodule CrypoWeb.TradeLive.Index do
     socket =
       socket
       |> stream(:trades, trades)
+      |> put_flash(:info, "Trades updated")
 
     {:noreply, socket}
   end

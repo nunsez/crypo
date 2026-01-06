@@ -35,10 +35,12 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    portfolio = if connected?(socket), do: build_portfolio(), else: []
+
     socket =
       socket
       |> assign(:page_title, "Portfolio")
-      |> stream(:portfolio, build_portfolio())
+      |> stream(:portfolio, portfolio)
 
     {:ok, socket}
   end
@@ -51,6 +53,7 @@ defmodule CrypoWeb.PortfolioLive.Index do
     socket =
       socket
       |> stream(:portfolio, build_portfolio(), reset: true)
+      |> put_flash(:info, "Prices updated")
 
     {:noreply, socket}
   end
@@ -61,6 +64,7 @@ defmodule CrypoWeb.PortfolioLive.Index do
     socket =
       socket
       |> stream(:portfolio, build_portfolio(), reset: true)
+      |> put_flash(:info, "Trades updated")
 
     {:noreply, socket}
   end

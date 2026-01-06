@@ -17,7 +17,7 @@ defmodule CrypoWeb.TradeLive.Index do
         <:col :let={{_id, trade}} label="Symbol">
           <span :if={@symbol}>{trade.symbol}</span>
 
-          <.link :if={!@symbol} class="link link-primary" patch={~p"/trades/#{trade.symbol}"}>
+          <.link :if={!@symbol} class="link link-primary" navigate={~p"/trades/#{trade.symbol}"}>
             {trade.symbol}
           </.link>
         </:col>
@@ -59,7 +59,10 @@ defmodule CrypoWeb.TradeLive.Index do
 
       {:ok, socket}
     else
-      socket = redirect(socket, to: ~p"/trades/#{upcased}")
+      socket =
+        socket
+        |> redirect(to: ~p"/trades/#{upcased}")
+
       {:ok, socket}
     end
   end
@@ -131,7 +134,9 @@ defmodule CrypoWeb.TradeLive.Index do
     symbol = socket.assigns[:symbol]
     trades = if symbol, do: Trades.find_by_symbol(symbol), else: Trades.list_trades()
 
-    socket = stream(socket, :trades, trades)
+    socket =
+      socket
+      |> stream(:trades, trades)
 
     {:noreply, socket}
   end

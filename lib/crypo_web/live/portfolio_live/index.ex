@@ -15,7 +15,7 @@ defmodule CrypoWeb.PortfolioLive.Index do
         rows={@streams.portfolio}
       >
         <:col :let={{_id, item}} label="Currency">
-          <.link class="link link-primary" patch={~p"/trades/#{item.symbol}"}>
+          <.link class="link link-primary" navigate={~p"/trades/#{item.symbol}"}>
             {item.currency}
           </.link>
         </:col>
@@ -35,8 +35,11 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    socket = assign(socket, :page_title, "Portfolio")
-    socket = stream(socket, :portfolio, build_portfolio())
+    socket =
+      socket
+      |> assign(:page_title, "Portfolio")
+      |> stream(:portfolio, build_portfolio())
+
     {:ok, socket}
   end
 
@@ -44,14 +47,20 @@ defmodule CrypoWeb.PortfolioLive.Index do
   def handle_event("update-prices", _unsigned_params, socket) do
     data = Prices.Sync.xx()
     Prices.update_prices(data)
-    socket = stream(socket, :portfolio, build_portfolio(), reset: true)
+
+    socket =
+      socket
+      |> stream(:portfolio, build_portfolio(), reset: true)
 
     {:noreply, socket}
   end
 
   def handle_event("update-trades", _unsigned_params, socket) do
     Trades.Import.call()
-    socket = stream(socket, :portfolio, build_portfolio(), reset: true)
+
+    socket =
+      socket
+      |> stream(:portfolio, build_portfolio(), reset: true)
 
     {:noreply, socket}
   end

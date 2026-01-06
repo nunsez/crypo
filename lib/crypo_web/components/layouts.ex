@@ -66,6 +66,9 @@ defmodule CrypoWeb.Layouts do
       <.button phx-click="update-prices">Update Prices</.button>
       <.button phx-click="update-trades">Update Trades</.button>
 
+      <.button navigate={~p"/"}>Portfolio</.button>
+      <.button navigate={~p"/trades"}>Trades</.button>
+
       <div class="mx-auto max-w-2xl space-y-4">
         {render_slot(@inner_block)}
       </div>

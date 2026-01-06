@@ -55,6 +55,8 @@ defmodule CrypoWeb.PortfolioLive.Index do
       |> stream(:portfolio, build_portfolio(), reset: true)
       |> put_flash(:info, "Prices updated")
 
+    Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
+
     {:noreply, socket}
   end
 
@@ -65,6 +67,15 @@ defmodule CrypoWeb.PortfolioLive.Index do
       socket
       |> stream(:portfolio, build_portfolio(), reset: true)
       |> put_flash(:info, "Trades updated")
+
+    Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:clear_flash, key}, socket) do
+    socket = if key, do: clear_flash(socket, key), else: clear_flash(socket)
 
     {:noreply, socket}
   end

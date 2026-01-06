@@ -91,12 +91,16 @@ defmodule CrypoWeb.TradeLive.Index do
           |> stream_insert(:trades, trade)
           |> put_flash(:info, "Disabled")
 
+        Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
+
         {:noreply, socket}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         socket =
           socket
           |> put_flash(:error, "Disable error")
+
+        Process.send_after(self(), {:clear_flash, :error}, to_timeout(second: 3))
 
         {:noreply, socket}
     end
@@ -112,12 +116,16 @@ defmodule CrypoWeb.TradeLive.Index do
           |> stream_insert(:trades, trade)
           |> put_flash(:info, "Enabled")
 
+        Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
+
         {:noreply, socket}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         socket =
           socket
           |> put_flash(:error, "Enable error")
+
+        Process.send_after(self(), {:clear_flash, :error}, to_timeout(second: 3))
 
         {:noreply, socket}
     end
@@ -127,6 +135,8 @@ defmodule CrypoWeb.TradeLive.Index do
     socket =
       socket
       |> put_flash(:info, "Please visit the portfolio to update prices")
+
+    Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
 
     {:noreply, socket}
   end
@@ -141,6 +151,15 @@ defmodule CrypoWeb.TradeLive.Index do
       socket
       |> stream(:trades, trades)
       |> put_flash(:info, "Trades updated")
+
+    Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:clear_flash, key}, socket) do
+    socket = if key, do: clear_flash(socket, key), else: clear_flash(socket)
 
     {:noreply, socket}
   end

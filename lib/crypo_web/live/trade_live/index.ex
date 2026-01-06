@@ -50,10 +50,12 @@ defmodule CrypoWeb.TradeLive.Index do
     if symbol == upcased do
       trades = Trades.find_by_symbol(symbol)
 
-      socket = assign(socket, :page_title, "Listing #{symbol} Trades")
-      socket = assign(socket, :header, "Listing #{symbol} Trades")
-      socket = assign(socket, :symbol, true)
-      socket = stream(socket, :trades, trades)
+      socket =
+        socket
+        |> assign(:page_title, "Listing #{symbol} Trades")
+        |> assign(:header, "Listing #{symbol} Trades")
+        |> assign(:symbol, symbol)
+        |> stream(:trades, trades)
 
       {:ok, socket}
     else
@@ -65,10 +67,12 @@ defmodule CrypoWeb.TradeLive.Index do
   def mount(_params, _session, socket) do
     trades = Trades.list_trades()
 
-    socket = assign(socket, :page_title, "Listing Trades")
-    socket = assign(socket, :header, "Listing Trades")
-    socket = assign(socket, :symbol, false)
-    socket = stream(socket, :trades, trades)
+    socket =
+      socket
+      |> assign(:page_title, "Listing Trades")
+      |> assign(:header, "Listing Trades")
+      |> assign(:symbol, nil)
+      |> stream(:trades, trades)
 
     {:ok, socket}
   end
@@ -79,12 +83,18 @@ defmodule CrypoWeb.TradeLive.Index do
 
     case Trades.disable(trade) do
       {:ok, trade} ->
-        socket = stream_insert(socket, :trades, trade)
-        socket = put_flash(socket, :info, "Disabled")
-        {:noreply, stream_insert(socket, :trades, trade)}
+        socket =
+          socket
+          |> stream_insert(:trades, trade)
+          |> put_flash(:info, "Disabled")
+
+        {:noreply, socket}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
-        socket = put_flash(socket, :error, "Disable error")
+        socket =
+          socket
+          |> put_flash(:error, "Disable error")
+
         {:noreply, socket}
     end
   end
@@ -94,13 +104,35 @@ defmodule CrypoWeb.TradeLive.Index do
 
     case Trades.enable(trade) do
       {:ok, trade} ->
-        socket = stream_insert(socket, :trades, trade)
-        socket = put_flash(socket, :info, "Enabled")
-        {:noreply, stream_insert(socket, :trades, trade)}
+        socket =
+          socket
+          |> stream_insert(:trades, trade)
+          |> put_flash(:info, "Enabled")
+
+        {:noreply, socket}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
-        socket = put_flash(socket, :error, "Enable error")
+        socket =
+          socket
+          |> put_flash(:error, "Enable error")
+
         {:noreply, socket}
     end
+  end
+
+  def handle_event("update-prices", _unsigned_params, socket) do
+    # ignore
+    {:noreply, socket}
+  end
+
+  def handle_event("update-trades", _unsigned_params, socket) do
+    Trades.Import.call()
+
+    symbol = socket.assigns[:symbol]
+    trades = if symbol, do: Trades.find_by_symbol(symbol), else: Trades.list_trades()
+
+    socket = stream(socket, :trades, trades)
+
+    {:noreply, socket}
   end
 end

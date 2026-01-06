@@ -40,6 +40,22 @@ defmodule CrypoWeb.PortfolioLive.Index do
     {:ok, socket}
   end
 
+  @impl true
+  def handle_event("update-prices", _unsigned_params, socket) do
+    data = Prices.Sync.xx()
+    Prices.update_prices(data)
+    socket = stream(socket, :portfolio, build_portfolio(), reset: true)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update-trades", _unsigned_params, socket) do
+    Trades.Import.call()
+    socket = stream(socket, :portfolio, build_portfolio(), reset: true)
+
+    {:noreply, socket}
+  end
+
   defp build_portfolio() do
     trades = Trades.list_enabled_trades()
     prices = Prices.list_prices() |> Map.new(fn price -> {price.symbol, price} end)

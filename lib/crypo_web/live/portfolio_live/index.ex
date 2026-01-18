@@ -3,6 +3,7 @@ defmodule CrypoWeb.PortfolioLive.Index do
 
   alias Crypo.Prices
   alias Crypo.Trades
+  alias Crypo.Portfolio
 
   @impl true
   def render(assigns) do
@@ -10,39 +11,64 @@ defmodule CrypoWeb.PortfolioLive.Index do
     <Layouts.app flash={@flash}>
       <.header>Portfolio</.header>
 
-      <.table
-        id="portfolio"
-        rows={@streams.portfolio}
+      <Flop.Phoenix.table
+        items={@streams.portfolio}
+        meta={@meta}
+        opts={[table_attrs: [class: "table table-zebra"]]}
+        on_sort={JS.push("sort-portfolio")}
       >
-        <:col :let={{_id, item}} label="Currency">
+        <:col :let={{_id, item}} label="Currency" field={:currency}>
           <.link class="link link-primary" navigate={~p"/trades/#{item.symbol}"}>
             {item.currency}
           </.link>
         </:col>
 
-        <:col :let={{_id, item}} label="Balance">{format_number(item.balance)}</:col>
-        <:col :let={{_id, item}} label="Buy Average">{format_number(item.buy_average)}</:col>
-        <:col :let={{_id, item}} label="My Cost">{format_number(item.my_cost)}</:col>
-        <:col :let={{_id, item}} label="Current price">{format_number(item.current_price)}</:col>
-        <:col :let={{_id, item}} label="Current cost">{format_number(item.current_cost)}</:col>
-        <:col :let={{_id, item}} label="P&L $">{format_number(item.pl_dollars)}</:col>
-        <:col :let={{_id, item}} label="P&L %">{format_number(item.pl_percent)}</:col>
-        <:col :let={{_id, item}} label="Share %">{item.share}</:col>
-      </.table>
+        <:col :let={{_id, item}} label="Balance" field={:balance}>
+          {format_number(item.balance)}
+        </:col>
+
+        <:col :let={{_id, item}} label="Buy Average" field={:buy_average}>
+          {format_number(item.buy_average)}
+        </:col>
+
+        <:col :let={{_id, item}} label="My Cost" field={:my_cost}>
+          {format_number(item.my_cost)}
+        </:col>
+
+        <:col :let={{_id, item}} label="Current price" field={:current_price}>
+          {format_number(item.current_price)}
+        </:col>
+
+        <:col :let={{_id, item}} label="Current cost" field={:current_cost}>
+          {format_number(item.current_cost)}
+        </:col>
+
+        <:col :let={{_id, item}} label="P&L $" field={:pl_dollars}>
+          {format_number(item.pl_dollars)}
+        </:col>
+
+        <:col :let={{_id, item}} label="P&L %" field={:pl_percent}>
+          {format_number(item.pl_percent)}
+        </:col>
+
+        <:col :let={{_id, item}} label="Share %" field={:share}>
+          {item.share}
+        </:col>
+      </Flop.Phoenix.table>
     </Layouts.app>
     """
   end
 
   @impl true
-  def mount(_params, _session, socket) do
-    portfolio = if connected?(socket), do: build_portfolio(), else: []
+  def handle_params(params, _uri, socket) do
+    {portfolio, meta} = Portfolio.list!(params)
 
     socket =
       socket
-      |> assign(:page_title, "Portfolio")
-      |> stream(:portfolio, portfolio)
+      |> stream(:portfolio, portfolio, reset: true)
+      |> assign(:meta, meta)
 
-    {:ok, socket}
+    {:noreply, socket}
   end
 
   @impl true
@@ -50,10 +76,14 @@ defmodule CrypoWeb.PortfolioLive.Index do
     data = Prices.Sync.xx()
     Prices.update_prices(data)
 
+    flop = socket.assigns.meta.flop
+    {portfolio, meta} = Portfolio.list!(flop)
+
     socket =
       socket
-      |> stream(:portfolio, build_portfolio(), reset: true)
+      |> stream(:portfolio, portfolio, reset: true)
       |> put_flash(:info, "Prices updated")
+      |> assign(:meta, meta)
 
     Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
 
@@ -63,14 +93,36 @@ defmodule CrypoWeb.PortfolioLive.Index do
   def handle_event("update-trades", _unsigned_params, socket) do
     Trades.Import.call()
 
+    flop = socket.assigns.meta.flop
+    {portfolio, meta} = Portfolio.list!(flop)
+
     socket =
       socket
-      |> stream(:portfolio, build_portfolio(), reset: true)
+      |> stream(:portfolio, portfolio, reset: true)
       |> put_flash(:info, "Trades updated")
+      |> assign(:meta, meta)
 
     Process.send_after(self(), {:clear_flash, :info}, to_timeout(second: 3))
 
     {:noreply, socket}
+  end
+
+  def handle_event("sort-portfolio", unsigned_params, socket) do
+    flop = Flop.push_order(socket.assigns.meta.flop, unsigned_params["order"])
+    {portfolio, meta} = Portfolio.list!(flop)
+
+    socket =
+      socket
+      |> stream(:portfolio, portfolio, reset: true)
+      |> assign(:meta, meta)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update-filter", params, socket) do
+    params = Map.delete(params, "_target")
+    dbg(params)
+    {:noreply, push_patch(socket, to: ~p"/?#{params}")}
   end
 
   @impl true
@@ -78,65 +130,6 @@ defmodule CrypoWeb.PortfolioLive.Index do
     socket = if key, do: clear_flash(socket, key), else: clear_flash(socket)
 
     {:noreply, socket}
-  end
-
-  defp build_portfolio() do
-    trades = Trades.list_enabled_trades()
-    prices = Prices.list_prices() |> Map.new(fn price -> {price.symbol, price} end)
-
-    by_symbol = Enum.group_by(trades, fn trade -> trade.symbol end)
-
-    result =
-      Enum.map(by_symbol, fn {symbol, trades} ->
-        currency = String.trim_trailing(symbol, "USDT")
-        buy_trades = Enum.filter(trades, fn trade -> trade.side == "Buy" end)
-        buy_cost = Enum.sum_by(buy_trades, fn trade -> trade.cash_flow * trade.price end)
-        buy_count = Enum.sum_by(buy_trades, fn trade -> trade.change end)
-        buy_average = buy_cost / buy_count
-
-        sell_trades = Enum.filter(trades, fn trade -> trade.side == "Sell" end)
-        sell_cost = -Enum.sum_by(sell_trades, fn trade -> trade.cash_flow * trade.price end)
-        # sell_count = -Enum.sum_by(sell_trades, fn trade -> trade.change end)
-
-        balance = Enum.sum_by(trades, fn trade -> trade.change end)
-
-        current_price = if prices[symbol], do: prices[symbol].price, else: 0
-        my_cost = buy_cost - sell_cost
-        current_cost = balance * current_price
-        pl_dollars = current_cost - my_cost
-        pl_percent = pl_dollars * 100 / my_cost
-
-        %{
-          id: currency,
-          currency: currency,
-          symbol: symbol,
-          balance: balance,
-          buy_average: buy_average,
-          my_cost: my_cost,
-          current_price: current_price,
-          current_cost: current_cost,
-          pl_dollars: pl_dollars,
-          pl_percent: pl_percent,
-          share: 0
-        }
-      end)
-
-    result = Enum.reject(result, fn item -> item.balance * item.buy_average < 1.0 end)
-    portfolio_cost = Enum.sum_by(result, fn item -> item.current_cost end)
-
-    result =
-      Enum.map(result, fn item ->
-        share =
-          if portfolio_cost > 0 do
-            Float.round(item.current_cost * 100 / portfolio_cost, 1)
-          else
-            0.0
-          end
-
-        %{item | share: share}
-      end)
-
-    Enum.sort_by(result, fn item -> item.pl_dollars end)
   end
 
   defp format_number(number) when is_number(number) do

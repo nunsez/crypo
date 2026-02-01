@@ -23,9 +23,21 @@ defmodule CrypoWeb.TradeLive.Index do
         </:col>
 
         <:col :let={{_id, trade}} label="Side">{trade.side}</:col>
-        <:col :let={{_id, trade}} label="Change">{trade.change}</:col>
-        <:col :let={{_id, trade}} label="Price">{trade.price}</:col>
-        <:col :let={{_id, trade}} label="Transaction time">{trade.transaction_time}</:col>
+        <:col :let={{_id, trade}} label="Cash Flow">
+          <span class="cursor-pointer" phx-click={JS.dispatch("copy-to-clipboard")}>
+            {trade.cash_flow}
+          </span>
+        </:col>
+        <:col :let={{_id, trade}} label="Price">
+          <span class="cursor-pointer" phx-click={JS.dispatch("copy-to-clipboard")}>
+            {trade.price}
+          </span>
+        </:col>
+        <:col :let={{_id, trade}} label="Transaction time">
+          <span class="cursor-pointer" phx-click={JS.dispatch("copy-to-clipboard")}>
+            {Trades.datetime_str(trade)}
+          </span>
+        </:col>
 
         <:action :let={{_id, trade}}>
           <%= if Trade.disabled?(trade) do %>
@@ -39,6 +51,10 @@ defmodule CrypoWeb.TradeLive.Index do
           <% end %>
         </:action>
       </.table>
+
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".Clipboard">
+        export default {}
+      </script>
     </Layouts.app>
     """
   end

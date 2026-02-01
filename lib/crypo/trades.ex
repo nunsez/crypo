@@ -144,4 +144,32 @@ defmodule Crypo.Trades do
   def enable(%Trade{} = trade) do
     update_trade(trade, %{disabled_at: nil})
   end
+
+  @spec datetime_str(trade :: Trade.t()) :: String.t()
+  def datetime_str(%Trade{transaction_time: transaction_time}) do
+    time = DateTime.add(transaction_time, 7, :hour)
+
+    iodata = [
+      zero_pad(time.year, 4),
+      "-",
+      zero_pad(time.month, 2),
+      "-",
+      zero_pad(time.day, 2),
+      " ",
+      zero_pad(time.hour, 2),
+      ":",
+      zero_pad(time.minute, 2),
+      ":",
+      zero_pad(time.second, 2)
+    ]
+
+    IO.iodata_to_binary(iodata)
+  end
+
+  @spec zero_pad(number :: non_neg_integer(), count :: non_neg_integer()) :: String.t()
+  defp zero_pad(number, count) when number >= 0 and count >= 0 do
+    number
+    |> Integer.to_string()
+    |> String.pad_leading(count, "0")
+  end
 end
